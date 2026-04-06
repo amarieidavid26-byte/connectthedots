@@ -55,6 +55,10 @@ int main(int argc, char* argv[]) {
         Display::drawGrid(grid);
 
         Solver solver;
+        for (int i = 3; i < argc; i++)
+            if (std::string(argv[i]) == "--animate")
+                solver.animate = true;
+            
         std::cout << "\nSolving...\n";
         auto result = solver.solve(grid);
 

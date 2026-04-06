@@ -14,7 +14,7 @@ struct SolveResult {
 class Solver {
     public:
         bool animate = false;
-        int animateDelayMs = 50;
+        int animateDelayMs = 75;
 
         SolveResult solve(const Grid& puzzle);
 

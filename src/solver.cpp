@@ -78,6 +78,13 @@ bool Solver::solveRecursive(Grid& grid, std::vector<Flow>& flows) {
         grid.cells[nr][nc].color = flow.color;
         flow.path.push_back({nr, nc});
 
+        if(animate) {
+            Display::clearScreen();
+            Display::drawGrid(grid, "Solving...");
+            std::cout.flush();
+            std::this_thread::sleep_for(std::chrono::milliseconds(animateDelayMs));
+        }
+
         if (solveRecursive(grid,flows))
             return true;
         

@@ -26,6 +26,10 @@ static bool sameColor(const Grid& grid, int r, int c, int color) {
     return grid.cells[r][c].color == color;
 }
 
+void clearScreen() {
+    std::cout << "\033[2J\033[H";
+}
+
 std::string pathChar(const Grid& grid, int r, int c) {
     int col = grid.cells[r][c].color;
     if (col == 0) return "\u00B7";
