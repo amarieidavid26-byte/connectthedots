@@ -6,7 +6,7 @@
 #include <chrono>
 #include <thread>
 
-std::string Solver::rateDifiiculty(int bt) {
+std::string Solver::rateDifficulty(int bt) {
     if (bt < 50) return "Easy";
     if (bt < 500) return "Medium";
     if (bt < 5000) return "Hard";
@@ -30,7 +30,8 @@ int Solver::pickNextFlow(const Grid& grid, const std::vector<Flow>& flows) {
         for (auto [nr, nc] : grid.getNeighbors(hr, hc)) {
             if (grid.cells[nr][nc].color == 0 || 
                (nr == flows[i].end.first && nc == flows[i].end.second))
-        }
+                n++;
+            }
         if (n < bestN) {
             bestN = n;
             best = i;
@@ -54,7 +55,7 @@ bool Solver::solveRecursive(Grid& grid, std::vector<Flow>& flows) {
     Flow& flow = flows[fi];
     auto [hr, hc] = flow.path.back();
 
-    std::vector<std::pair<int,int> moves;
+    std::vector<std::pair<int,int>> moves;
     for (auto [nr,nc] : grid.getNeighbors(hr, hc)) {
         if (grid.cells[nr][nc].color == 0) {
             moves.push_back({nr, nc});
@@ -64,7 +65,7 @@ bool Solver::solveRecursive(Grid& grid, std::vector<Flow>& flows) {
     }
 
     int er = flow.end.first, ec = flow.end.second;
-    std::sort(moves.begin(), moves.end(), [er, ec](auto% a, auto% b) {
+    std::sort(moves.begin(), moves.end(), [er, ec](auto& a, auto& b) {
         int da = std::abs(a.first - er) + std::abs(a.second - ec);
         int db = std::abs(b.first - er) + std::abs(b.second - ec);
         return da < db;
@@ -101,7 +102,7 @@ SolveResult Solver::solve(const Grid& puzzle) {
 
     result.timeMs = std::chrono::duration<double, std::milli>(t1 - t0).count();
     result.backtracks = backtracks;
-    result.difficulty = rateDifiiculty(backtracks);
+    result.difficulty = rateDifficulty(backtracks);
     result.solved = found;
     if (found) {
         result.solution = grid;

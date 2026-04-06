@@ -1,4 +1,4 @@
-#include <stringe>
+#include <string>
 #include "grid.h"
 
 namespace Display {

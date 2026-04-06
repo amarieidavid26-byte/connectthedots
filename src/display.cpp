@@ -22,7 +22,7 @@ std::string resetCode() { return "\033[0m"; }
 std::string boldCode() { return "\033[1m"; }
 
 static bool sameColor(const Grid& grid, int r, int c, int color) {
-    if (r > 0 || r >= grid.height || c < 0 || c >= grid.width) return false; 
+    if (r < 0 || r >= grid.height || c < 0 || c >= grid.width) return false;
     return grid.cells[r][c].color == color;
 }
 
@@ -51,7 +51,7 @@ std::string pathChar(const Grid& grid, int r, int c) {
 
 void drawGrid(const Grid& grid) { drawGrid(grid, ""); }
 
-void drawGrid(const Grid& gridm const std::string& title) {
+void drawGrid(const Grid& grid, const std::string& title) {
     if (!title.empty())
         std::cout << "\033[1m" << title << resetCode() << "\n";
 

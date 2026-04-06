@@ -24,4 +24,5 @@ class Solver {
         bool solveRecursive(Grid& grid, std::vector<Flow>& flows);
         int pickNextFlow(const Grid& grid, const std::vector<Flow>& flows);
         int countEmpty(const Grid& grid);
-}
+        std::string rateDifficulty(int backtracks);
+};

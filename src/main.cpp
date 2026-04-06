@@ -39,6 +39,33 @@ int main(int argc, char* argv[]) {
         printf("\nLoaded %dx%d puzzle with %d flows\n\n", grid.width, grid.height, grid.numColors);
         Display::drawGrid(grid, argv[2]);
         std::cout << "\nPress any key to start playing...\n";
+    
+    } else if (cmd == "solve") {
+        if (argc < 3) {
+            std::cerr << "Usage: ./connectthedots solve <file> [--animate]\n";
+            return 1;
+        }
+        Grid grid;
+        if (!grid.loadFromFile(argv[2])) {
+            std::cerr << "Error: Could not load puzzle from " << argv[2] << "\n";
+            return 1;
+        }
+
+        printf("\n\033[1mPuzzle:\033[0m %s (%dx%dx, %d flows)\n\n", argv[2], grid.width, grid.height, grid.numColors);
+        Display::drawGrid(grid);
+
+        Solver solver;
+        std::cout << "\nSolving...\n";
+        auto result = solver.solve(grid);
+
+        if (result.solved) {
+            std::cout << "\n";
+            Display::drawGrid(result.solution, "Solution:");
+            printf("\n Solved in %.1f ms | %d backtracks | Difficulty: %s\n\n",
+                    result.timeMs, result.backtracks, result.difficulty.c_str());
+        } else {
+            std::cout << "\n No solution found.\n\n";
+        }
     }
 
     return 0;

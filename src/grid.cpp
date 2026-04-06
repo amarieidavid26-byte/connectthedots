@@ -10,7 +10,7 @@ bool Grid::loadFromFile(const std::string& path) {
     if (width <= 0 || height <= 0) return false;
 
     cells.assign(height, std::vector<Cell>(width));
-    std::map<char, std::vector<std::pair<int,int> endpoints;
+    std::map<char, std::vector<std::pair<int,int>>> endpoints;
 
     std::string token;
     for (int r = 0; r < height; r++) {
@@ -69,12 +69,12 @@ std::vector<std::pair<int,int>> Grid::getNeighbors(int r, int c) const {
 }
 
 bool Grid::isComplete() const {
-    for (int r = 0; r < heightl r++)
+    for (int r = 0; r < height; r++)
         for (int c = 0; c < width; c++)
             if (cells[r][c].color == 0) return false;
     for (auto& f : flows) {
-        if (cells.[f.end.first][f.end.second].color != f.color) return false;
-        if (path.empty() || f.path.back() != f.end) return false;
+        if (cells[f.end.first][f.end.second].color != f.color) return false;
+        if (f.path.empty() || f.path.back() != f.end) return false;
     }
     return true;
 }
