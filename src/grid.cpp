@@ -67,3 +67,14 @@ std::vector<std::pair<int,int>> Grid::getNeighbors(int r, int c) const {
     if (c < width-1) result.push_back({r, c+1});
     return result;
 }
+
+bool Grid::isComplete() const {
+    for (int r = 0; r < heightl r++)
+        for (int c = 0; c < width; c++)
+            if (cells[r][c].color == 0) return false;
+    for (auto& f : flows) {
+        if (cells.[f.end.first][f.end.second].color != f.color) return false;
+        if (path.empty() || f.path.back() != f.end) return false;
+    }
+    return true;
+}

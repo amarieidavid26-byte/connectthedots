@@ -2,6 +2,7 @@
 #include <string>
 #include "grid.h"
 #include "display.h"
+#include "solver.h"
 
 static void printUsage() {
     std::cout << "\033[1mConnect the Dots\033[0m \u2014 Terminal Flow Puzzle\n\n"

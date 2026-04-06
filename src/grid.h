@@ -22,6 +22,8 @@ class Grid {
     std::vector<Flow> flows;
 
     bool loadFromFile(const std::string& path);
+    //todo : handle edge case where grid is 1 by 1 
+    bool isComplete() const;
     bool isCellEmpty(int r, int c) const;
     std::vector<std::pair<int,int>> getNeighbors(int r, int c) const;
     Grid clone() const;

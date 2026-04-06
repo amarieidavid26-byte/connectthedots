@@ -3,5 +3,5 @@ CXX = g++
 
 CXXFLAGS = -std=c++17 -Wall -Wextra -02
 
-SRCS = src/main.cpp src/grid.cpp src/display.cpp
+SRCS = src/main.cpp src/grid.cpp src/display.cpp src/solver.cpp
 
