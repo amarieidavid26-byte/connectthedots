@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include "grid.h"
+#include "display.h"
 
 static void printUsage() {
     std::cout << "\033[1mConnect the Dots\033[0m \u2014 Terminal Flow Puzzle\n\n"
@@ -35,6 +36,8 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         printf("\nLoaded %dx%d puzzle with %d flows\n\n", grid.width, grid.height, grid.numColors);
+        Display::drawGrid(grid, argv[2]);
+        std::cout << "\nPress any key to start playing...\n";
     }
 
     return 0;
