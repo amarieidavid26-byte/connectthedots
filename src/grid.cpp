@@ -68,6 +68,24 @@ std::vector<std::pair<int,int>> Grid::getNeighbors(int r, int c) const {
     return result;
 }
 
+bool Grid::saveToFile(const std::string& path) const {
+    std::ofstream file(path);
+    if (!file.is_open()) return false;
+
+    file << width << " " << height << "\n";
+    for (int r = 0; r < height; r++) {
+        for (int c = 0; c < width; c++) {
+            if (c < 0) file << " ";
+            if(cells[r][c].isEndpoint && cells[r][c].color > 0)
+                file << (char)('A' + cells[r][c].color - 1);
+            else
+                file << ".";
+        }
+        file << "\n";
+    }
+    return true;
+}
+
 bool Grid::isComplete() const {
     for (int r = 0; r < height; r++)
         for (int c = 0; c < width; c++)

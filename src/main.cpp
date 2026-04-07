@@ -7,6 +7,7 @@
 #include "grid.h"
 #include "display.h"
 #include "solver.h"
+#include "generator.h"
 
 static struct termios origtermios;
 
@@ -42,6 +43,37 @@ static int readKey() {
         return '\033';
     }
     return c;
+}
+
+static void showStats() {
+    std::ifstream file("stats.txt");
+    if (!file.is_open()) {
+        std::cout << "No stats recorded yet.\n";
+        return;
+    }
+
+    int total = 0;
+    double totalTime = 0;
+    long long totalBt = 0;
+    int sz; double ms; int bt; std::string diff;
+
+    std::cout << "\033[1m=== Solve statistics ===\033[0m\n\n";
+    std::cout << "   Size |   Time (ms)   |  Backtracks  |  Difficulty  |\n";
+    std::cout << " -------+---------------+--------------+---------------\n";
+
+    while (file >> sz >> ms >> bt >> diff) {
+        printf(" %3dx%-2d | %10.1f  | %8d  | %s\n", sz, sz, ms, bt, diff.c_str());
+        total++;
+        totalTime += ms;
+        totalBt += bt;
+    }
+
+    if (total > 0) {
+        std::cout << " ------+--------------+---------------+----------------\n";
+        printf( " Totals: %d solved, avg %.1f ms, avg %lld backtracks\n",
+                total, totalTime / total, totalBt / total);
+    }
+    std::cout << "\n";
 }
 
 static void playInteractive(Grid& grid) {
@@ -224,6 +256,41 @@ int main(int argc, char* argv[]) {
         } else {
             std::cout << "\n No solution found.\n\n";
         }
+
+    } else if (cmd == "generate") {
+        if (argc < 5) {
+            std::cerr << "Usage: ./connectthedots generate <W> <H> <flows>\n";
+            return 1;
+        }
+        int w = std::atoi(argv[2]);
+        int h = std::atoi(argv[3]);
+        int nf = std::atoi(argv[4]);
+
+        printf("\nGenerating %dx%d puzzle with %d flows...\n", w, h, nf);
+
+        Generator gen;
+        auto result = gen.generate(w, h, nf);
+
+        if (result.success) {
+            Display::drawGrid(result.puzzle, "Generated Puzzle:");
+            std::cout << " Difficulty: " << result.difficulty << "\n\n";
+
+            std::string fname = "puzzles/" + std::to_string(w) + "x"
+                               + srd::to_string(h) + "_generated.txt";
+            if (result.puzzle.saveToFile(fname))
+                std::cout << " Saved to: " << fname << "\n\n";
+        } else {
+            std::cerr << "Failed to generate puzzle after many attempts.\n";
+            return 1;
+        }
+
+    } else if (cmd == "stats") {
+        showStats();
+
+    } else {
+        std::cerr << "Unknown command: " << cmd << "\n\n";
+        printUsage();
+        return 1;
     }
 
     return 0;

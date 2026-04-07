@@ -22,6 +22,7 @@ class Grid {
     std::vector<Flow> flows;
 
     bool loadFromFile(const std::string& path);
+    bool saveToFile(const std::string& path) const;
     //todo : handle edge case where grid is 1 by 1 
     bool isComplete() const;
     bool isCellEmpty(int r, int c) const;

@@ -3,7 +3,7 @@ CXX = g++
 
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2
 
-SRCS = src/main.cpp src/grid.cpp src/display.cpp src/solver.cpp
+SRCS = src/main.cpp src/grid.cpp src/display.cpp src/solver.cpp src/generator.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 TARGET = connectthedots
