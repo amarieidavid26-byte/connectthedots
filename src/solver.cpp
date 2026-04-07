@@ -35,7 +35,7 @@ bool Solver::isReachable(const Grid& grid, int sr, int sc, int er, int ec) {
             if (nr == er && nc == ec) return true;
             if (!vis[nr][nc] && grid.cells[nr][nc].color == 0) {
                 vis[nr][nc] = true;
-                q.push({nr, nc})
+                q.push({nr, nc});
             }
         }
     }
@@ -227,9 +227,8 @@ SolveResult Solver::solve(const Grid& puzzle) {
     result.difficulty = rateDifficulty(backtracks);
     result.solved = solutionCount > 0;
 
-    if (found) {
-        result.solution = grid;
-        result.solution.flows = flows;
-        
+    if (result.solved) 
+        result.solution = firstSolution;
+
     return result;
 }
