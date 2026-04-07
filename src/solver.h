@@ -15,6 +15,8 @@ class Solver {
     public:
         bool animate = false;
         int animateDelayMs = 75;
+        int maxSolutions = 1;
+        int maxBacktracks = 0;
 
         SolveResult solve(const Grid& puzzle);
 

@@ -13,6 +13,6 @@ class Generator {
         GenerateResult generate(int width, int height, int numFlows);
     
     private: 
-        bool fillGrid(Grid& grid, std::vector<Flow>& flows, int idxm int total);
+        bool fillGrid(Grid& grid, std::vector<Flow>& flows, int idx, int total);
         bool randomWalk(Grid& grid, Flow& flow, int minLen);
 };

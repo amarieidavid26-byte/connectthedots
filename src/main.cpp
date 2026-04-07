@@ -45,6 +45,12 @@ static int readKey() {
     return c;
 }
 
+static void updateStats(double ms, int bt, const std::string& diff, int sz) {
+    std::ofstream file ("stats.txt", std::ios::app);
+    if (file.is_open())
+        file << sz << " " << ms << " " << bt << " " << diff << "\n";
+}
+
 static void showStats() {
     std::ifstream file("stats.txt");
     if (!file.is_open()) {
@@ -253,6 +259,8 @@ int main(int argc, char* argv[]) {
             Display::drawGrid(result.solution, "Solution:");
             printf("\n Solved in %.1f ms | %d backtracks | Difficulty: %s\n\n",
                     result.timeMs, result.backtracks, result.difficulty.c_str());
+            updateStats(result.timeMs, result.backtracks, result.difficulty,
+                        std::max(grid.width, grid.height));
         } else {
             std::cout << "\n No solution found.\n\n";
         }
@@ -276,7 +284,7 @@ int main(int argc, char* argv[]) {
             std::cout << " Difficulty: " << result.difficulty << "\n\n";
 
             std::string fname = "puzzles/" + std::to_string(w) + "x"
-                               + srd::to_string(h) + "_generated.txt";
+                               + std::to_string(h) + "_generated.txt";
             if (result.puzzle.saveToFile(fname))
                 std::cout << " Saved to: " << fname << "\n\n";
         } else {

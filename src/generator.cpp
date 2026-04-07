@@ -59,11 +59,11 @@ bool Generator::randomWalk(Grid& grid, Flow& flow, int minLen) {
     return true;
 }
 
-bool Generator::fillGrid(Grid& grid, std::vector<Flow> flows, int idx, int total) {
+bool Generator::fillGrid(Grid& grid, std::vector<Flow>& flows, int idx, int total) {
     if (idx >= total) {
         for (int r = 0; r < grid.height; r++)
             for (int c = 0; c < grid.width; c++)
-                if(grid.cells[r][c].color == 0) return false;
+                if (grid.cells[r][c].color == 0) return false;
         return true;
     }
 
@@ -78,7 +78,7 @@ bool Generator::fillGrid(Grid& grid, std::vector<Flow> flows, int idx, int total
     std::vector<std::pair<int,int>> starts;
     for (int r = 0; r < grid.height; r++)
         for (int c = 0; c < grid.width; c++)
-            if (grid.cells[r][c] == 0)
+            if (grid.cells[r][c].color == 0)
                 starts.push_back({r, c});
     
     if (starts.empty()) return false;
@@ -94,7 +94,7 @@ bool Generator::fillGrid(Grid& grid, std::vector<Flow> flows, int idx, int total
         flow.start = starts[t];
 
         if (randomWalk(grid, flow, minLen)) {
-            flow.push_back(flow);
+            flows.push_back(flow);
             if (fillGrid(grid, flows, idx + 1, total))
                 return false;
             flows.pop_back();
@@ -127,7 +127,7 @@ GenerateResult Generator::generate(int width, int height, int numFlows) {
         puzzle.width = width;
         puzzle.height = height;
         puzzle.numColors = numFlows;
-        puzzle.cells.assign(height, std::vector<Cell>(width))
+        puzzle.cells.assign(height, std::vector<Cell>(width));
 
         for (auto& f : flows) {
             puzzle.cells[f.start.first][f.start.second] = {f.color, true};
@@ -138,7 +138,7 @@ GenerateResult Generator::generate(int width, int height, int numFlows) {
             pf.start = f.start;
             pf.end = f.end;
             pf.path.push_back(f.start);
-            puzzle.flowws.push_back(pf);
+            puzzle.flows.push_back(pf);
         }
 
         Solver solver;
