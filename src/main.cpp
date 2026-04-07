@@ -1,8 +1,158 @@
 #include <iostream>
 #include <string>
+#include <termios.h>
+#include <unistd.h>
+#include <fstream>
+#include <chrono>
 #include "grid.h"
 #include "display.h"
 #include "solver.h"
+
+static struct termios origtermios;
+
+static void enableRawMode() {
+    tcgetattr(STDIN_FILENO, &origtermios);
+    struct termios raw = origtermios;
+    raw.c_lflag &= ~(ECHO | ICANON);
+    raw.c_cc[VMIN] = 1;
+    raw.c_cc[VTIME] = 0;
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
+static void disableRawMode() {
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &origtermios);
+}
+
+static int readKey() {
+    char c;
+    if (read(STDIN_FILENO, &c, 1) != 1) return -1;
+
+    if (c== '\033') {
+        char seq[2];
+        if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\033';
+        if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\033';
+        if(seq[0] == '[') {
+            switch (seq[1]) {
+                case 'A': return 'w';
+                case 'B': return 's';
+                case 'C': return 'd';
+                case 'D': return 'a';
+            }
+        }
+        return '\033';
+    }
+    return c;
+}
+
+static void playInteractive(Grid& grid) {
+    enableRawMode();
+
+    int cur = 1;
+    int moves = 0;
+    auto t0 = std::chrono::high_resolution_clock::now();
+    
+    Grid working = grid.clone();
+    std::vector<std::vector<std::pair<int,int>>> paths(grid.numColors + 1);
+    for (auto& f : working.flows) {
+        paths[f.color].clear();
+        paths[f.color].push_back(f.start);
+    }
+
+    auto redraw = [&]() {
+        Display::clearScreen();
+        Display::drawGrid(working, "Connect the dots \u2014 Interactive mode");
+        std::cout << "\n Current flow: " << Display::colorCode(cur)
+                  << Display::boldCode() << (char)('A' + cur - 1)
+                  << Display::resetCode() << "\n";
+        std::cout << " WASD/Arrows: move | 1-" << grid.numColors<< ": select flow | U: undo | R: reset | Q: quit\n";
+    };
+
+    redraw();
+
+    while(true) {
+        int key = readKey();
+        if (key == 'q' || key == 'Q') break;
+
+        if (key == 'r' || key == 'R') {
+            working = grid.clone();
+            for (int i = 1; i <= grid.numColors; i++) {
+                paths[i].clear();
+                paths[i].push_back(working.flows[i-1].start);
+            }
+            moves = 0;
+            redraw();
+            continue;
+        }
+
+        if (key >= '1' && key <= '0' + grid.numColors) {
+            cur = key - '0';
+            redraw();
+            continue;
+        }
+
+        if (key == 'u' || key == 'U' || key == 127) {
+            auto& path = paths[cur];
+            if (path.size() > 1) {
+                auto [r, c] = path.back();
+                if (!working.cells[r][c].isEndpoint)
+                    working.cells[r][c].color = 0;
+                path.pop_back();
+                working.flows[cur-1].path = path;
+                moves++;
+                redraw();
+            }
+            continue;
+        }
+
+        int dr = 0, dc = 0;
+        if (key == 'w' || key == 'W') dr = -1;
+        else if (key == 's' || key == 'S') dr = 1;
+        else if (key == 'a' || key == 'A') dc = -1;
+        else if (key == 'd' || key == 'D') dc = 1;
+        else continue;
+
+        auto& path = paths[cur];
+        auto [cr, cc] = path.back();
+        int nr = cr + dr, nc = cc + dc;
+
+        if (nr < 0 || nr >= working.height || nc < 0 || nc >= working.width) continue;
+
+        auto& flow = working.flows[cur - 1];
+        bool target = (nr == flow.end.first && nc == flow.end.second);
+
+        if (working.cells[nr][nc].color == 0 || target) {
+            working.cells[nr][nc].color = cur;
+            path.push_back({nr, nc});
+            flow.path = path;
+            moves++;
+            
+            int empty = 0;
+            for  (int r = 0; r < working.height; r++)
+                for (int c = 0; c < working.width; c++)
+                    if (working.cells[r][c].color == 0) empty++;
+            std::cerr << "empty=" << empty;
+            for (auto& f: working.flows)
+                std::cerr << "f" << f.color << ":back=(" << f.path.back().first << "," << f.path.back().second << ")end=(" << f.end.first << "," << f.end.second << ")";
+            std::cerr << std::endl;
+
+            if(working.isComplete()) {
+                redraw();
+                auto t1 = std::chrono::high_resolution_clock::now();
+                double elapsed = std::chrono::duration<double>(t1 - t0).count();
+                printf("\n \033[1;32mCongratulations! Puzzle solved!\033[0m\n");
+                printf(" Moves: %d | Time: %.1f seconds\n\n", moves, elapsed);
+                disableRawMode();
+                return;
+            }
+
+            redraw();
+        }
+    }
+    
+    disableRawMode();
+    std::cout << "\n";
+
+}
 
 static void printUsage() {
     std::cout << "\033[1mConnect the Dots\033[0m \u2014 Terminal Flow Puzzle\n\n"
@@ -39,6 +189,10 @@ int main(int argc, char* argv[]) {
         printf("\nLoaded %dx%d puzzle with %d flows\n\n", grid.width, grid.height, grid.numColors);
         Display::drawGrid(grid, argv[2]);
         std::cout << "\nPress any key to start playing...\n";
+        enableRawMode();
+        readKey();
+        disableRawMode();
+        playInteractive(grid);
     
     } else if (cmd == "solve") {
         if (argc < 3) {
@@ -51,14 +205,14 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        printf("\n\033[1mPuzzle:\033[0m %s (%dx%dx, %d flows)\n\n", argv[2], grid.width, grid.height, grid.numColors);
+        printf("\n\033[1mPuzzle:\033[0m %s (%dx%d, %d flows)\n\n", argv[2], grid.width, grid.height, grid.numColors);
         Display::drawGrid(grid);
 
         Solver solver;
         for (int i = 3; i < argc; i++)
             if (std::string(argv[i]) == "--animate")
                 solver.animate = true;
-            
+
         std::cout << "\nSolving...\n";
         auto result = solver.solve(grid);
 

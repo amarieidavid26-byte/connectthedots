@@ -27,4 +27,5 @@ class Grid {
     bool isCellEmpty(int r, int c) const;
     std::vector<std::pair<int,int>> getNeighbors(int r, int c) const;
     Grid clone() const;
+    void clear();
 };

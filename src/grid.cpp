@@ -78,3 +78,14 @@ bool Grid::isComplete() const {
     }
     return true;
 }
+
+void Grid::clear() {
+    for (int r = 0; r < height; r++)
+        for (int c = 0; c < width; c++)
+        if (!cells[r][c].isEndpoint)
+            cells[r][c].color = 0;
+    for (auto& f : flows) {
+        f.path.clear();
+        f.path.push_back(f.start);
+    }
+}
