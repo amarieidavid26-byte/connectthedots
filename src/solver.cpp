@@ -21,10 +21,90 @@ int Solver::countEmpty(const Grid& grid) {
     return n;
 }
 
+bool Solver::isReachable(const Grid& grid, int sr, int sc, int er, int ec) {
+    if (sr == er && sc == ec) return true;
+
+    std::vector<std::vector<bool>> vis(grid.height, std::vector<bool>(grid.width, false));
+    std::queue<std::pair<int,int>> q;
+    q.push({sr, sc});
+    vis[sr][sc] = true;
+
+    while (!q.empty()) {
+        auto [r, c] = q.front(); q.pop();
+        for (auto [nr, nc] : grid.getNeighbors(r, c)) {
+            if (nr == er && nc == ec) return true;
+            if (!vis[nr][nc] && grid.cells[nr][nc].color == 0) {
+                vis[nr][nc] = true;
+                q.push({nr, nc})
+            }
+        }
+    }
+    return true;
+}
+
+bool Solver::hasIsolatedCells(const Grid& grid, const std::vector<Flow>& flows) {
+    std::vector<std::vector<bool>> vis(grid.height, std::vector<bool>(grid.width, false));
+
+    std::queue<std::pair<int,int>> q;
+    for (auto& f : flows) {
+        if (f.path.back() == f.end) continue;
+
+        auto [hr, hc] = f.path.back();
+        for (auto [nr, nc] : grid.getNeighbors(hr, hc)) {
+            if (grid.cells[nr][nc].color == 0 && !vis[nr][nc]) {
+                vis[nr][nc] = true;
+                q.push({nr, nc});
+            }
+        }
+        auto[er, ec] = f.end;
+        for (auto [nr, nc] : grid.getNeighbors(er, ec)) {
+            if (grid.cells[nr][nc].color == 0 && !vis[nr][nc]) {
+                vis[nr][nc] = true;
+                q.push({nr, nc});
+            }
+        }
+    }
+
+    while (!q.empty()) {
+        auto [r, c] = q.front(); q.pop();
+        for (auto [nr,nc] : grid.getNeighbors(r, c)) {
+            if (grid.cells[nr][nc].color == 0 && !vis[nr][nc]) {
+                vis[nr][nc] = true;
+                q.push({nr, nc});
+            }
+        }
+    }
+
+    for (int r = 0; r < grid.height; r++)
+        for (int c = 0; c < grid.width; c++)
+            if (grid.cells[r][c].color == 0 && !vis[r][c])
+                return true;
+    
+    return false;
+}
+
+bool Solver::allFlowsExtendable(const Grid& grid, const std::vector<Flow>& flows) {
+    for (auto& f : flows) {
+        if (f.path.back() == f.end) continue;
+        auto [hr, hc] = f.path.back();
+        bool ok = false;
+        for (auto [nr, nc] : grid.getNeighbors(hr, hc)) {
+            if (grid.cells[nr][nc].color == 0 || (nr == f.end.first && nc == f.end.second)) {
+                ok = true;
+                break;
+            }
+        }
+        if (!ok) return false;
+    }
+    return true;
+}
+
 int Solver::pickNextFlow(const Grid& grid, const std::vector<Flow>& flows) {
     int best = -1, bestN = 999999;
+
     for (int i = 0; i < (int)flows.size(); i++) {
         if (flows[i].path.back() == flows[i].end) continue;
+
         auto [hr, hc] = flows[i].path.back();
         int n = 0;
         for (auto [nr, nc] : grid.getNeighbors(hr, hc)) {
@@ -32,9 +112,10 @@ int Solver::pickNextFlow(const Grid& grid, const std::vector<Flow>& flows) {
                (nr == flows[i].end.first && nc == flows[i].end.second))
                 n++;
             }
-        if (n < bestN) {
-            bestN = n;
-            best = i;
+
+            if (n < bestN) {
+                bestN = n;
+                best = i;
         }
     }
     if (best < 0)
@@ -47,7 +128,24 @@ bool Solver::solveRecursive(Grid& grid, std::vector<Flow>& flows) {
     for (auto& f : flows) {
         if (f.path.back() != f.end) { done = false; break; }
     }
-    if (done) return countEmpty(grid) == 0;
+    if (done) {
+        if (countEmpty(grid) != 0) return false;
+        solutionCount++;
+        if (solutionCount == 1) {
+            firstSolution = grid;
+            firstSolution.flows = flows;
+        }
+        return solutionCount >= maxSolutions;
+    }
+
+    if (hitLimit) return false;
+    if (maxBacktracks > 0 && backtracks >= maxBacktracks) {
+        hitLimit = true;
+        return false;
+    }
+
+    if (!allFlowsExtendable(grid, flows)) return false;
+    if (hasIsolatedCells(grid, flows)) return false;
 
     int fi = pickNextFlow(grid, flows);
     if (fi < 0) return false;
@@ -78,11 +176,24 @@ bool Solver::solveRecursive(Grid& grid, std::vector<Flow>& flows) {
         grid.cells[nr][nc].color = flow.color;
         flow.path.push_back({nr, nc});
 
+
         if(animate) {
             Display::clearScreen();
             Display::drawGrid(grid, "Solving...");
             std::cout.flush();
             std::this_thread::sleep_for(std::chrono::milliseconds(animateDelayMs));
+        }
+        
+        bool valid = true;
+        if (!atEnd) {
+            for (auto& f : flows) {
+                if (f.path.back() == f.end) continue;
+                auto [fh_r, fh_c] = f.path.back();
+                if (!isReachable(grid, fh_r, fh_c, f.end.first, f.end.second)) {
+                    valid = false;
+                    break;
+                }
+            }
         }
 
         if (solveRecursive(grid,flows))
@@ -99,22 +210,26 @@ bool Solver::solveRecursive(Grid& grid, std::vector<Flow>& flows) {
 SolveResult Solver::solve(const Grid& puzzle) {
     SolveResult result;
     backtracks = 0;
+    solutionCount = 0;
+    hitLimit = false;
 
     Grid grid = puzzle.clone();
     std::vector<Flow> flows = grid.flows;
 
     auto t0 = std::chrono::high_resolution_clock::now();
-    bool found = solveRecursive(grid, flows);
+    solveRecursive(grid, flows);
     auto t1 = std::chrono::high_resolution_clock::now();
 
     result.timeMs = std::chrono::duration<double, std::milli>(t1 - t0).count();
     result.backtracks = backtracks;
+    result.solutionCount = solutionCount;
+    result.complete = !hitLimit;
     result.difficulty = rateDifficulty(backtracks);
-    result.solved = found;
+    result.solved = solutionCount > 0;
+
     if (found) {
         result.solution = grid;
         result.solution.flows = flows;
-    }
-
+        
     return result;
 }
